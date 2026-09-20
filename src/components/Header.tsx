@@ -10,6 +10,8 @@ import {
   RotateCcw,
   FileSpreadsheet,
   Download,
+  CloudCheck,
+  RefreshCw,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -20,6 +22,10 @@ interface HeaderProps {
   onOpenGoogleSheets?: () => void;
   onOpenDownloadModal?: () => void;
   onResetData: () => void;
+  syncStatus?: 'synced' | 'syncing' | 'local' | 'error';
+  lastSavedTime?: string;
+  onRefreshFromServer?: () => void;
+  onForceSyncToServer?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -30,6 +36,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenGoogleSheets,
   onOpenDownloadModal,
   onResetData,
+  syncStatus = 'synced',
+  lastSavedTime,
+  onRefreshFromServer,
+  onForceSyncToServer,
 }) => {
   const totalBeds = beds.length;
   const occupiedBeds = beds.filter(b => b.trangThai === 'Có người').length;
@@ -153,9 +163,53 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          <div className="ml-auto text-slate-500 text-[11px] hidden md:flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-            Hệ thống trực tuyến • Kiểm định dữ liệu an toàn tự động
+          <div className="ml-auto flex items-center gap-2">
+            {/* Server Sync Indicator */}
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+                syncStatus === 'synced'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : syncStatus === 'syncing'
+                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                  : syncStatus === 'error'
+                  ? 'bg-rose-50 text-rose-800 border-rose-300'
+                  : 'bg-blue-50 text-blue-800 border-blue-200'
+              }`}
+              title={
+                syncStatus === 'synced'
+                  ? `Dữ liệu đã được lưu an toàn trên máy chủ${lastSavedTime ? ` (${lastSavedTime})` : ''}`
+                  : syncStatus === 'syncing'
+                  ? 'Đang lưu dữ liệu lên máy chủ...'
+                  : 'Dữ liệu đang lưu bộ nhớ tạm. Bấm đồng bộ để lưu máy chủ.'
+              }
+            >
+              {syncStatus === 'syncing' ? (
+                <RefreshCw className="w-3 h-3 text-amber-600 animate-spin" />
+              ) : syncStatus === 'synced' ? (
+                <CloudCheck className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              )}
+              <span>
+                {syncStatus === 'synced'
+                  ? `Máy chủ: Đã lưu ${lastSavedTime ? `(${lastSavedTime})` : 'tự động'}`
+                  : syncStatus === 'syncing'
+                  ? 'Đang lưu máy chủ...'
+                  : syncStatus === 'error'
+                  ? 'Lỗi kết nối máy chủ'
+                  : 'Đã lưu cục bộ'}
+              </span>
+            </div>
+
+            {onRefreshFromServer && (
+              <button
+                onClick={onRefreshFromServer}
+                className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                title="Tải lại dữ liệu mới nhất từ máy chủ"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>

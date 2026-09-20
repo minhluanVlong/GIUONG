@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bed, DischargeRecord, OccupancyType, CheckResult, SyncPayloadLog } from './types';
 import { INITIAL_BEDS, INITIAL_DISCHARGE_HISTORY } from './data/initialBeds';
 import { Header } from './components/Header';
@@ -12,16 +12,21 @@ import { GoogleSheetsModal } from './components/GoogleSheetsModal';
 import { DownloadPatientListModal } from './components/DownloadPatientListModal';
 import { normalizeName } from './utils/bedManagement';
 
-const BEDS_STORAGE_KEY = 'smart_bed_management_beds_v2';
-const HISTORY_STORAGE_KEY = 'smart_bed_management_history_v2';
-const SYNC_LOGS_STORAGE_KEY = 'smart_bed_management_sync_logs_v1';
+const BEDS_STORAGE_KEY = 'smart_bed_management_beds_v3';
+const HISTORY_STORAGE_KEY = 'smart_bed_management_history_v3';
+const SYNC_LOGS_STORAGE_KEY = 'smart_bed_management_sync_logs_v2';
+const BROADCAST_CHANNEL_NAME = 'smart_bed_channel_v1';
 
 export default function App() {
+  // Synchronous initial fallback from localStorage
   const [beds, setBeds] = useState<Bed[]>(() => {
     try {
       const saved = localStorage.getItem(BEDS_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch {
       // fallback to initial
@@ -33,7 +38,10 @@ export default function App() {
     try {
       const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       }
     } catch {
       // fallback
@@ -45,7 +53,10 @@ export default function App() {
     try {
       const saved = localStorage.getItem(SYNC_LOGS_STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       }
     } catch {
       // fallback
@@ -65,30 +76,141 @@ export default function App() {
     ];
   });
 
-  // Save to localStorage
+  // Server synchronization state
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'local' | 'error'>('syncing');
+  const [lastSavedTime, setLastSavedTime] = useState<string>('');
+  const isInitialLoadDoneRef = useRef(false);
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+
+  // 1. Fetch persistent data from server on initial mount
+  const fetchFromServer = useCallback(async () => {
+    try {
+      setSyncStatus('syncing');
+      const res = await fetch('/api/data');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data && Array.isArray(data.beds) && data.beds.length > 0) {
+        setBeds(data.beds);
+        if (Array.isArray(data.dischargeHistory)) {
+          setDischargeHistory(data.dischargeHistory);
+        }
+        if (Array.isArray(data.syncLogs)) {
+          setSyncLogs(data.syncLogs);
+        }
+        // Also save to localStorage as offline cache
+        try {
+          localStorage.setItem(BEDS_STORAGE_KEY, JSON.stringify(data.beds));
+          if (data.dischargeHistory) {
+            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(data.dischargeHistory));
+          }
+          if (data.syncLogs) {
+            localStorage.setItem(SYNC_LOGS_STORAGE_KEY, JSON.stringify(data.syncLogs));
+          }
+        } catch (e) {
+          console.warn('localStorage cache update failed', e);
+        }
+
+        const timeStr = new Date().toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        setLastSavedTime(timeStr);
+        setSyncStatus('synced');
+      }
+    } catch (err) {
+      console.warn('Server fetch error, running with local storage cache:', err);
+      setSyncStatus('local');
+    } finally {
+      isInitialLoadDoneRef.current = true;
+    }
+  }, []);
+
   useEffect(() => {
+    fetchFromServer();
+
+    // Setup cross-tab BroadcastChannel
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+        broadcastChannelRef.current = channel;
+        channel.onmessage = (event) => {
+          if (event.data?.type === 'SYNC_DATA') {
+            if (Array.isArray(event.data.beds)) setBeds(event.data.beds);
+            if (Array.isArray(event.data.dischargeHistory)) setDischargeHistory(event.data.dischargeHistory);
+            if (Array.isArray(event.data.syncLogs)) setSyncLogs(event.data.syncLogs);
+            setSyncStatus('synced');
+            setLastSavedTime(
+              new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            );
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel not supported or denied', e);
+    }
+
+    return () => {
+      broadcastChannelRef.current?.close();
+    };
+  }, [fetchFromServer]);
+
+  // 2. Persist to localStorage and Server whenever beds/history/logs change
+  useEffect(() => {
+    // Crucial: Skip initial render before server data has been loaded!
+    if (!isInitialLoadDoneRef.current) {
+      return;
+    }
+
+    // A. LocalStorage cache immediate write
     try {
       localStorage.setItem(BEDS_STORAGE_KEY, JSON.stringify(beds));
-    } catch (e) {
-      console.error('Failed to save beds to localStorage', e);
-    }
-  }, [beds]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(dischargeHistory));
-    } catch (e) {
-      console.error('Failed to save discharge history to localStorage', e);
-    }
-  }, [dischargeHistory]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem(SYNC_LOGS_STORAGE_KEY, JSON.stringify(syncLogs));
     } catch (e) {
-      console.error('Failed to save sync logs to localStorage', e);
+      console.warn('Failed to save to localStorage', e);
     }
-  }, [syncLogs]);
+
+    // B. Broadcast to other open tabs
+    try {
+      broadcastChannelRef.current?.postMessage({
+        type: 'SYNC_DATA',
+        beds,
+        dischargeHistory,
+        syncLogs,
+      });
+    } catch (e) {
+      // ignore
+    }
+
+    // C. Debounced save to Server API
+    setSyncStatus('syncing');
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ beds, dischargeHistory, syncLogs }),
+        });
+        if (res.ok) {
+          const timeStr = new Date().toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+          setLastSavedTime(timeStr);
+          setSyncStatus('synced');
+        } else {
+          setSyncStatus('error');
+        }
+      } catch (e) {
+        console.warn('Failed to sync to server, data remains in localStorage:', e);
+        setSyncStatus('local');
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [beds, dischargeHistory, syncLogs]);
 
   // Modals state
   const [selectedBedForDetail, setSelectedBedForDetail] = useState<Bed | null>(null);
@@ -285,12 +407,44 @@ export default function App() {
   };
 
   // Reset to initial data provided in prompt
-  const handleResetData = () => {
+  const handleResetData = async () => {
     if (window.confirm('Bạn có chắc chắn muốn khôi phục lại dữ liệu ban đầu theo file danh sách 93 giường bệnh?')) {
       setBeds(INITIAL_BEDS);
       setDischargeHistory(INITIAL_DISCHARGE_HISTORY);
-      localStorage.removeItem(BEDS_STORAGE_KEY);
-      localStorage.removeItem(HISTORY_STORAGE_KEY);
+      try {
+        localStorage.removeItem(BEDS_STORAGE_KEY);
+        localStorage.removeItem(HISTORY_STORAGE_KEY);
+        localStorage.removeItem(SYNC_LOGS_STORAGE_KEY);
+        await fetch('/api/reset', { method: 'POST' });
+        setSyncStatus('synced');
+        setLastSavedTime(
+          new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        );
+      } catch (e) {
+        console.warn('Reset server failed, reset locally', e);
+      }
+    }
+  };
+
+  // Force sync immediately to server
+  const handleForceSyncToServer = async () => {
+    setSyncStatus('syncing');
+    try {
+      const res = await fetch('/api/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ beds, dischargeHistory, syncLogs }),
+      });
+      if (res.ok) {
+        setSyncStatus('synced');
+        setLastSavedTime(
+          new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        );
+      } else {
+        setSyncStatus('error');
+      }
+    } catch {
+      setSyncStatus('local');
     }
   };
 
@@ -340,6 +494,10 @@ export default function App() {
         onOpenGoogleSheets={() => setIsGoogleSheetsOpen(true)}
         onOpenDownloadModal={() => setIsDownloadModalOpen(true)}
         onResetData={handleResetData}
+        syncStatus={syncStatus}
+        lastSavedTime={lastSavedTime}
+        onRefreshFromServer={fetchFromServer}
+        onForceSyncToServer={handleForceSyncToServer}
       />
 
       {/* Main Content Area: Unified Bàn Lệnh Điều Phối & Sơ Đồ Trực Quan 93 Giường */}

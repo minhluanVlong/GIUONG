@@ -249,9 +249,8 @@ export function parseUserCommand(input: string): ParsedCommand {
     };
   }
 
-  // 5. "Bắt buộc cấp cưỡng bức giường [Mã] cho BN [Tên]" hoặc "Cấp cưỡng bức giường [Mã] cho BN [Tên]"
-  // e.g. "Bắt buộc cấp cưỡng bức giường H002 cho BN Nguyễn Văn A"
-  const forceAssignRegex = /(?:bắt\s+buộc\s+cấp\s+cưỡng\s+bức|cấp\s+cưỡng\s+bức)\s+giường\s+(H\d{3})(?:\s+cho\s+bn\s+(.+))?/i;
+  // 5. "Bắt buộc cấp cưỡng bức [giường] [Mã] cho [BN] [Tên]" hoặc "Cấp cưỡng bức [giường] [Mã] cho [BN] [Tên]"
+  const forceAssignRegex = /(?:bắt\s+buộc\s+cấp\s+cưỡng\s+bức|cấp\s+cưỡng\s+bức)(?:\s+giường)?\s+(H\d{3})(?:\s+cho\s+(?:bn\s+|bệnh\s+nhân\s+)?(.+))?/i;
   const forceMatch = text.match(forceAssignRegex);
   if (forceMatch) {
     return {
@@ -262,8 +261,8 @@ export function parseUserCommand(input: string): ParsedCommand {
     };
   }
 
-  // 6. "Cấp giường tạm [Mã] cho BN [Họ tên], ngày mai sang [Mã giường sau]"
-  const tempAssignRegex = /cấp\s+giường\s+tạm\s+(H\d{3})\s+cho\s+bn\s+([^,]+)(?:,\s*ngày\s+mai\s+sang\s+(H\d{3}))?/i;
+  // 6. "Cấp [giường] tạm [Mã] cho [BN] [Họ tên], ngày mai sang [Mã]"
+  const tempAssignRegex = /cấp(?:\s+giường)?\s+tạm\s+(H\d{3})\s+(?:cho\s+)?(?:bn\s+|bệnh\s+nhân\s+)?([^,]+)(?:,\s*(?:ngày\s+mai\s+|mai\s+)?sang\s+(H\d{3}))?/i;
   const tempMatch = text.match(tempAssignRegex);
   if (tempMatch) {
     return {
@@ -275,20 +274,59 @@ export function parseUserCommand(input: string): ParsedCommand {
     };
   }
 
-  // 7. "Cấp giường [Mã] cho BN [Họ tên]"
-  const assignRegex = /cấp\s+giường\s+(H\d{3})\s+cho\s+bn\s+(.+)/i;
-  const assignMatch = text.match(assignRegex);
-  if (assignMatch) {
+  // 7a. "Cấp [giường] [Mã] cho [BN] [Họ tên]"
+  // e.g. "Cấp giường H003 cho BN Nguyễn Văn A", "Cấp H003 cho Nguyễn Văn A", "Cấp H003 BN Trần Văn B"
+  const assignRegex1 = /cấp(?:\s+giường)?\s+(H\d{3})\s+(?:cho\s+)?(?:bn\s+|bệnh\s+nhân\s+)?(.+)/i;
+  const assignMatch1 = text.match(assignRegex1);
+  if (assignMatch1) {
     return {
       action: 'ASSIGN',
-      bedId: assignMatch[1].toUpperCase(),
-      patientName: normalizeName(assignMatch[2]),
+      bedId: assignMatch1[1].toUpperCase(),
+      patientName: normalizeName(assignMatch1[2]),
       rawText: text,
     };
   }
 
-  // 8. "Xuất viện BN [Họ tên hoặc Mã giường]"
-  const dischargeRegex = /xuất\s+viện\s+(?:bn\s+)?(.+)/i;
+  // 7b. "Nhập/Thêm/Xếp/Gán/Cho [BN] [Họ tên] vào [giường] [Mã]"
+  // e.g. "Nhập BN Nguyễn Văn A vào H003", "Thêm Nguyễn Văn A vào giường H003"
+  const assignRegex2 = /(?:nhập|thêm|xếp|gán|cho)\s+(?:bn\s+|bệnh\s+nhân\s+)?(.+?)\s+vào(?:\s+giường)?\s+(H\d{3})/i;
+  const assignMatch2 = text.match(assignRegex2);
+  if (assignMatch2) {
+    return {
+      action: 'ASSIGN',
+      bedId: assignMatch2[2].toUpperCase(),
+      patientName: normalizeName(assignMatch2[1]),
+      rawText: text,
+    };
+  }
+
+  // 7c. "[Mã] : [Họ tên]" hoặc "[Mã] - [Họ tên]" hoặc "[Mã] = [Họ tên]"
+  // e.g. "H003: NGUYỄN VĂN A", "H003 - NGUYỄN VĂN A"
+  const assignRegex3 = /^(H\d{3})\s*[:\-=]\s*(?:bn\s+|bệnh\s+nhân\s+)?(.+)$/i;
+  const assignMatch3 = text.match(assignRegex3);
+  if (assignMatch3) {
+    return {
+      action: 'ASSIGN',
+      bedId: assignMatch3[1].toUpperCase(),
+      patientName: normalizeName(assignMatch3[2]),
+      rawText: text,
+    };
+  }
+
+  // 7d. "[Mã] [Họ tên]" (e.g. "H003 Nguyễn Văn A")
+  const assignRegex4 = /^(H\d{3})\s+(?:bn\s+|bệnh\s+nhân\s+)?([a-zA-Zà-ỹÀ-Ỹ\s]{2,})$/i;
+  const assignMatch4 = text.match(assignRegex4);
+  if (assignMatch4) {
+    return {
+      action: 'ASSIGN',
+      bedId: assignMatch4[1].toUpperCase(),
+      patientName: normalizeName(assignMatch4[2]),
+      rawText: text,
+    };
+  }
+
+  // 8. "Xuất viện [BN] [Họ tên hoặc Mã giường]" / "Trả giường [Mã]" / "Giải phóng [Mã]"
+  const dischargeRegex = /(?:xuất\s+viện|trả\s+giường|giải\s+phóng(?:\s+giường)?)\s+(?:bn\s+|bệnh\s+nhân\s+)?(.+)/i;
   const dischargeMatch = text.match(dischargeRegex);
   if (dischargeMatch) {
     const target = dischargeMatch[1].trim();
@@ -301,8 +339,8 @@ export function parseUserCommand(input: string): ParsedCommand {
     };
   }
 
-  // 9. "Mở khóa giường [Mã]"
-  const unlockRegex = /mở\s+khóa\s+giường\s+(H\d{3})/i;
+  // 9. "Mở khóa [giường] [Mã]" / "Mở [giường] [Mã]" / "Khử khuẩn xong [Mã]"
+  const unlockRegex = /(?:mở\s+khóa|mở|khử\s+khuẩn\s+xong)(?:\s+giường)?\s+(H\d{3})/i;
   const unlockMatch = text.match(unlockRegex);
   if (unlockMatch) {
     return {
