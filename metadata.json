@@ -1,0 +1,6 @@
+{
+  "name": "Hệ thống Trợ lý Điều phối Giường bệnh",
+  "description": "Hệ thống điều phối 93 giường bệnh nội trú và đồng bộ dữ liệu tự động với 2 sheet PHÒNG và XUẤT VIỆN, kiểm tra quy tắc an toàn 4 bước và xuất sinh JSON payload.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

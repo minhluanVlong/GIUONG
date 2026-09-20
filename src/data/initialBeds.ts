@@ -1,0 +1,141 @@
+import { Bed, DischargeRecord } from '../types';
+
+export const INITIAL_BEDS: Bed[] = [
+  // KHU NỘI NHI (H001 - H050)
+  { tt: 1, maGiuong: 'H001', phongCode: 'HS1', tenPhong: 'HỒI SỨC 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'PHẠM THỊ HAI', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 2, maGiuong: 'H002', phongCode: 'HS1', tenPhong: 'HỒI SỨC 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức', khoaXuatVienHomNay: true, benhNhanVuaXuatVien: 'TRẦN VĂN AN', thoiGianXuatVienHomNay: 'Hôm nay 08:30' },
+  { tt: 3, maGiuong: 'H003', phongCode: 'HS1', tenPhong: 'HỒI SỨC 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 4, maGiuong: 'H004', phongCode: 'HS1', tenPhong: 'HỒI SỨC 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  
+  { tt: 5, maGiuong: 'H005', phongCode: 'HS2', tenPhong: 'HỒI SỨC 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'LÊ THỊ SÁU', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 6, maGiuong: 'H006', phongCode: 'HS2', tenPhong: 'HỒI SỨC 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN VĂN HẾT', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 7, maGiuong: 'H007', phongCode: 'HS2', tenPhong: 'HỒI SỨC 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'TRẦN THỊ THÂN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 8, maGiuong: 'H008', phongCode: 'P1', tenPhong: 'PHÒNG 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'HỒ MINH TRÍ', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 9, maGiuong: 'H009', phongCode: 'P1', tenPhong: 'PHÒNG 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'TRẦM MẶC UYÊN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 10, maGiuong: 'H010', phongCode: 'P1', tenPhong: 'PHÒNG 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'TRẦN MINH HOÀNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 11, maGiuong: 'H011', phongCode: 'P1', tenPhong: 'PHÒNG 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN VĂN KIỆT', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 12, maGiuong: 'H012', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN LÂM KHÁNH VY', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 13, maGiuong: 'H013', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'VÕ THỊ HUỆ', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 14, maGiuong: 'H014', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'VÕ THỊ QUYÊN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 15, maGiuong: 'H015', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN THỊ CHẬM', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 16, maGiuong: 'H016', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN THỊ CHƯA', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 17, maGiuong: 'H017', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'LÊ QUANG MỸ HẠNH', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 18, maGiuong: 'H018', phongCode: 'P2', tenPhong: 'PHÒNG 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN THỊ HÒA', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 19, maGiuong: 'H019', phongCode: 'P3', tenPhong: 'PHÒNG 3', khuVuc: 'KHU NỘI NHI', hoTenBn: 'LÊ THỊ KIM PHƯỢNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 20, maGiuong: 'H020', phongCode: 'P3', tenPhong: 'PHÒNG 3', khuVuc: 'KHU NỘI NHI', hoTenBn: 'ĐINH THỊ LỰU', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 21, maGiuong: 'H021', phongCode: 'P3', tenPhong: 'PHÒNG 3', khuVuc: 'KHU NỘI NHI', hoTenBn: 'LÊ THỊ PHIÊU', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 22, maGiuong: 'H022', phongCode: 'P4', tenPhong: 'PHÒNG 4', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN VĂN PHƯƠNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 23, maGiuong: 'H023', phongCode: 'P4', tenPhong: 'PHÒNG 4', khuVuc: 'KHU NỘI NHI', hoTenBn: 'ĐẶNG VĂN MINH', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 24, maGiuong: 'H024', phongCode: 'P4', tenPhong: 'PHÒNG 4', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN THANH HÀO', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 25, maGiuong: 'H025', phongCode: 'P4', tenPhong: 'PHÒNG 4', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN VĂN MƯỜI', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 26, maGiuong: 'H026', phongCode: 'P4', tenPhong: 'PHÒNG 4', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN MINH THIỆN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 27, maGiuong: 'H027', phongCode: 'P5', tenPhong: 'PHÒNG 5', khuVuc: 'KHU NỘI NHI', hoTenBn: 'PHAN THỊ SÁU', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 28, maGiuong: 'H028', phongCode: 'P5', tenPhong: 'PHÒNG 5', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN THỊ NGA', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 29, maGiuong: 'H029', phongCode: 'P5', tenPhong: 'PHÒNG 5', khuVuc: 'KHU NỘI NHI', hoTenBn: 'HUỲNH THỊ THUẬN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 30, maGiuong: 'H030', phongCode: 'LK', tenPhong: 'LÃO KHOA', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN VĂN DẦY', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 31, maGiuong: 'H031', phongCode: 'LK', tenPhong: 'LÃO KHOA', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN HOÀNG PHÚC', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 32, maGiuong: 'H032', phongCode: 'LK', tenPhong: 'LÃO KHOA', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN VĂN CHÍ', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 33, maGiuong: 'H033', phongCode: 'LK', tenPhong: 'LÃO KHOA', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN THỊ THU THỦY', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 34, maGiuong: 'H034', phongCode: 'LK', tenPhong: 'LÃO KHOA', khuVuc: 'KHU NỘI NHI', hoTenBn: 'PHẠM VĂN DẢNH', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 35, maGiuong: 'H035', phongCode: 'LK', tenPhong: 'LÃO KHOA', khuVuc: 'KHU NỘI NHI', hoTenBn: 'PHAN VĂN HIỆP', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 36, maGiuong: 'H036', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 37, maGiuong: 'H037', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'NGUYỄN GIA HUY', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 38, maGiuong: 'H038', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'ĐỖ LÊ TRƯỜNG AN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 39, maGiuong: 'H039', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 40, maGiuong: 'H040', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'LÊ ÁNH NGỌC', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 41, maGiuong: 'H041', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 42, maGiuong: 'H042', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 43, maGiuong: 'H043', phongCode: 'N1', tenPhong: 'NHI 1', khuVuc: 'KHU NỘI NHI', hoTenBn: 'PHAN NGỌC NGÂN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 44, maGiuong: 'H044', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 45, maGiuong: 'H045', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 46, maGiuong: 'H046', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 47, maGiuong: 'H047', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 48, maGiuong: 'H048', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 49, maGiuong: 'H049', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 50, maGiuong: 'H050', phongCode: 'N2', tenPhong: 'NHI 2', khuVuc: 'KHU NỘI NHI', hoTenBn: 'LÊ HẢI ĐĂNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  // KHU NHIỄM / KHU LÂY (H051 - H093)
+  { tt: 51, maGiuong: 'H051', phongCode: 'NB', tenPhong: 'NHẬN BỆNH', khuVuc: 'KHU LÂY', hoTenBn: 'NGUYỄN THỊ MỸ KIM', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 52, maGiuong: 'H052', phongCode: 'NB', tenPhong: 'NHẬN BỆNH', khuVuc: 'KHU LÂY', hoTenBn: 'PHẠM THỊ HỒNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 53, maGiuong: 'H053', phongCode: 'NB', tenPhong: 'NHẬN BỆNH', khuVuc: 'KHU LÂY', hoTenBn: 'LÊ THỊ SÁNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 54, maGiuong: 'H054', phongCode: 'NB', tenPhong: 'NHẬN BỆNH', khuVuc: 'KHU LÂY', hoTenBn: 'NGUYỄN THỊ YẾN', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 55, maGiuong: 'H055', phongCode: 'P1-KN', tenPhong: 'PHÒNG 1 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'VÕ TRẦN QUỐC BẢO', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 56, maGiuong: 'H056', phongCode: 'P1-KN', tenPhong: 'PHÒNG 1 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'CHUNG NGUYỄN MINH KHOA', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 57, maGiuong: 'H057', phongCode: 'P1-KN', tenPhong: 'PHÒNG 1 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 58, maGiuong: 'H058', phongCode: 'P2-KN', tenPhong: 'PHÒNG 2 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 59, maGiuong: 'H059', phongCode: 'P2-KN', tenPhong: 'PHÒNG 2 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 60, maGiuong: 'H060', phongCode: 'P2-KN', tenPhong: 'PHÒNG 2 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'BÙI ĐĂNG KHOA', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 61, maGiuong: 'H061', phongCode: 'P3-KN', tenPhong: 'PHÒNG 3 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 62, maGiuong: 'H062', phongCode: 'P3-KN', tenPhong: 'PHÒNG 3 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'HỒ SỸ VƯỢNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 63, maGiuong: 'H063', phongCode: 'P3-KN', tenPhong: 'PHÒNG 3 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 64, maGiuong: 'H064', phongCode: 'P4-KN', tenPhong: 'PHÒNG 4 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'PHẠM THỊ LÊ', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 65, maGiuong: 'H065', phongCode: 'P4-KN', tenPhong: 'PHÒNG 4 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 66, maGiuong: 'H066', phongCode: 'P4-KN', tenPhong: 'PHÒNG 4 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'NGUYỄN THỊ CÚC', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 67, maGiuong: 'H067', phongCode: 'P5-KN', tenPhong: 'PHÒNG 5 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 68, maGiuong: 'H068', phongCode: 'P5-KN', tenPhong: 'PHÒNG 5 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 69, maGiuong: 'H069', phongCode: 'P5-KN', tenPhong: 'PHÒNG 5 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 70, maGiuong: 'H070', phongCode: 'P6-KN', tenPhong: 'PHÒNG 6 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 71, maGiuong: 'H071', phongCode: 'P6-KN', tenPhong: 'PHÒNG 6 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 72, maGiuong: 'H072', phongCode: 'P6-KN', tenPhong: 'PHÒNG 6 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'TÔ VĂN MỪNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 73, maGiuong: 'H073', phongCode: 'P7-KN', tenPhong: 'PM / PHÒNG 7 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'ĐINH MINH KHOA', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 74, maGiuong: 'H074', phongCode: 'P7-KN', tenPhong: 'PM / PHÒNG 7 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'ĐINH MINH KHÔI', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 75, maGiuong: 'H075', phongCode: 'P7-KN', tenPhong: 'PM / PHÒNG 7 (KN)', khuVuc: 'KHU LÂY', hoTenBn: 'NGUYỄN THỊ NGỌC ANH', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 76, maGiuong: 'H076', phongCode: 'P8-KN', tenPhong: 'PHÒNG 8 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 77, maGiuong: 'H077', phongCode: 'P8-KN', tenPhong: 'PHÒNG 8 (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 78, maGiuong: 'H078', phongCode: 'DT1', tenPhong: 'DƯƠNG TÍNH 1', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 79, maGiuong: 'H079', phongCode: 'DT1', tenPhong: 'DƯƠNG TÍNH 1', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 80, maGiuong: 'H080', phongCode: 'DT2', tenPhong: 'DƯƠNG TÍNH 2', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 81, maGiuong: 'H081', phongCode: 'DT2', tenPhong: 'DƯƠNG TÍNH 2', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 82, maGiuong: 'H082', phongCode: 'DT2', tenPhong: 'DƯƠNG TÍNH 2', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 83, maGiuong: 'H083', phongCode: 'CXV2', tenPhong: 'CHỜ XUẤT VIỆN 2', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 84, maGiuong: 'H084', phongCode: 'CXV2', tenPhong: 'CHỜ XUẤT VIỆN 2', khuVuc: 'KHU LÂY', hoTenBn: 'VÕ VIỆT THẮNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 85, maGiuong: 'H085', phongCode: 'CXV2', tenPhong: 'CHỜ XUẤT VIỆN 2', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 86, maGiuong: 'H086', phongCode: 'NN1', tenPhong: 'NGHI NGỜ 1', khuVuc: 'KHU LÂY', hoTenBn: 'PHAN VĂM HOÀNG', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 87, maGiuong: 'H087', phongCode: 'NN1', tenPhong: 'NGHI NGỜ 1', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+
+  { tt: 88, maGiuong: 'H088', phongCode: 'NN2', tenPhong: 'NGHI NGỜ 2', khuVuc: 'KHU LÂY', hoTenBn: 'HUỲNH THỊ DỬ', trangThai: 'Có người', loaiNam: 'Chính thức' },
+  { tt: 89, maGiuong: 'H089', phongCode: 'NN2', tenPhong: 'NGHI NGỜ 2', khuVuc: 'KHU LÂY', hoTenBn: 'LÊ THỊ ĐƯỢC', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 90, maGiuong: 'H090', phongCode: 'TDBN', tenPhong: 'THEO DÕI BỆNH NẶNG', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 91, maGiuong: 'H091', phongCode: 'TDBN', tenPhong: 'THEO DÕI BỆNH NẶNG', khuVuc: 'KHU LÂY', hoTenBn: 'TRẦN THỊ HỒNG CẨM', trangThai: 'Có người', loaiNam: 'Chính thức' },
+
+  { tt: 92, maGiuong: 'H092', phongCode: 'HS-KN', tenPhong: 'HỒI SỨC (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+  { tt: 93, maGiuong: 'H093', phongCode: 'HS-KN', tenPhong: 'HỒI SỨC (KN)', khuVuc: 'KHU LÂY', hoTenBn: '', trangThai: 'Trống', loaiNam: 'Chính thức' },
+];
+
+export const INITIAL_DISCHARGE_HISTORY: DischargeRecord[] = [
+  {
+    id: 'dc-init-1',
+    hoTenBn: 'TRẦN VĂN AN',
+    giuongCu: 'H002',
+    thoiGian: '2026-09-18 14:30',
+    ghiChu: 'Khỏi bệnh, xuất viện theo dõi tại nhà',
+  },
+  {
+    id: 'dc-init-2',
+    hoTenBn: 'LÊ THỊ MAI',
+    giuongCu: 'H036',
+    thoiGian: '2026-09-19 09:15',
+    ghiChu: 'Đã hoàn tất điều trị nhi khoa',
+  }
+];
