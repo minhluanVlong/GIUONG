@@ -10,116 +10,90 @@ import { VisualMapModal } from './components/VisualMapModal';
 import { AlertModal } from './components/AlertModal';
 import { GoogleSheetsModal } from './components/GoogleSheetsModal';
 import { DownloadPatientListModal } from './components/DownloadPatientListModal';
+import { BackupRestoreModal } from './components/BackupRestoreModal';
 import { normalizeName } from './utils/bedManagement';
+import { loadHospitalData, saveHospitalDataImmediately } from './utils/storage';
 
-const BEDS_STORAGE_KEY = 'smart_bed_management_beds_v3';
-const HISTORY_STORAGE_KEY = 'smart_bed_management_history_v3';
-const SYNC_LOGS_STORAGE_KEY = 'smart_bed_management_sync_logs_v2';
 const BROADCAST_CHANNEL_NAME = 'smart_bed_channel_v1';
 
 export default function App() {
-  // Synchronous initial fallback from localStorage
+  // Load initial dataset from reliable local storage
   const [beds, setBeds] = useState<Bed[]>(() => {
-    try {
-      const saved = localStorage.getItem(BEDS_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {
-      // fallback to initial
-    }
-    return INITIAL_BEDS;
+    return loadHospitalData().beds;
   });
 
   const [dischargeHistory, setDischargeHistory] = useState<DischargeRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem(HISTORY_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch {
-      // fallback
-    }
-    return INITIAL_DISCHARGE_HISTORY;
+    return loadHospitalData().dischargeHistory;
   });
 
   const [syncLogs, setSyncLogs] = useState<SyncPayloadLog[]>(() => {
-    try {
-      const saved = localStorage.getItem(SYNC_LOGS_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch {
-      // fallback
-    }
-    return [
-      {
-        id: 'sync-init-1',
-        timestamp: '07:30',
-        action: 'DISCHARGE',
-        payload: {
-          action: 'DISCHARGE',
-          bedId: 'H002',
-          note: 'Xuất viện (Khóa giường trong ngày)',
-        },
-        summary: 'Xuất viện BN LÊ VĂN TÁM khỏi H002',
-      },
-    ];
+    return loadHospitalData().syncLogs;
   });
 
-  // Server synchronization state
-  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'local' | 'error'>('syncing');
-  const [lastSavedTime, setLastSavedTime] = useState<string>('');
+  // Server & Local Storage synchronization state
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'local' | 'error'>('synced');
+  const [lastSavedTime, setLastSavedTime] = useState<string>(() => {
+    return new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  });
   const isInitialLoadDoneRef = useRef(false);
   const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
 
-  // 1. Fetch persistent data from server on initial mount
+  // 1. Fetch persistent data from server on initial mount with Smart Conflict Resolution
   const fetchFromServer = useCallback(async () => {
     try {
-      setSyncStatus('syncing');
-      const res = await fetch('/api/data');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data && Array.isArray(data.beds) && data.beds.length > 0) {
-        setBeds(data.beds);
-        if (Array.isArray(data.dischargeHistory)) {
-          setDischargeHistory(data.dischargeHistory);
-        }
-        if (Array.isArray(data.syncLogs)) {
-          setSyncLogs(data.syncLogs);
-        }
-        // Also save to localStorage as offline cache
-        try {
-          localStorage.setItem(BEDS_STORAGE_KEY, JSON.stringify(data.beds));
-          if (data.dischargeHistory) {
-            localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(data.dischargeHistory));
-          }
-          if (data.syncLogs) {
-            localStorage.setItem(SYNC_LOGS_STORAGE_KEY, JSON.stringify(data.syncLogs));
-          }
-        } catch (e) {
-          console.warn('localStorage cache update failed', e);
-        }
-
-        const timeStr = new Date().toLocaleTimeString('vi-VN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        });
-        setLastSavedTime(timeStr);
-        setSyncStatus('synced');
+      const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+      let res = await fetch(`${baseUrl}/api/data`).catch(() => null);
+      if (!res || !res.ok) {
+        res = await fetch('/api/data').catch(() => null);
       }
-    } catch (err) {
-      console.warn('Server fetch error, running with local storage cache:', err);
+
+      if (res && res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = await res.json();
+          if (data && Array.isArray(data.beds) && data.beds.length > 0) {
+            const local = loadHospitalData();
+            const localOccupiedCount = local.beds.filter(b => b.trangThai === 'Có người').length;
+            const serverOccupiedCount = data.beds.filter((b: Bed) => b.trangThai === 'Có người').length;
+            const serverTime = data.lastUpdated ? new Date(data.lastUpdated).getTime() : 0;
+            const localTime = local.lastModified || 0;
+
+            // Conflict resolution:
+            // If local data has active user patient records and was edited after server or server is at default:
+            if (localOccupiedCount > 0 && localTime > serverTime + 3000) {
+              // Push local data to server
+              await fetch(`${baseUrl}/api/data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  beds: local.beds,
+                  dischargeHistory: local.dischargeHistory,
+                  syncLogs: local.syncLogs,
+                }),
+              }).catch(() => null);
+            } else if (serverOccupiedCount >= localOccupiedCount || serverTime >= localTime) {
+              // Server has up-to-date data: safely adopt server data
+              setBeds(data.beds);
+              if (Array.isArray(data.dischargeHistory)) setDischargeHistory(data.dischargeHistory);
+              if (Array.isArray(data.syncLogs)) setSyncLogs(data.syncLogs);
+              saveHospitalDataImmediately(data.beds, data.dischargeHistory || [], data.syncLogs || []);
+            }
+
+            const timeStr = new Date().toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            });
+            setLastSavedTime(timeStr);
+            setSyncStatus('synced');
+            return;
+          }
+        }
+      }
+
+      // If server is not present (e.g. static GitHub Pages hosting), running in reliable local mode
+      setSyncStatus('local');
+    } catch {
       setSyncStatus('local');
     } finally {
       isInitialLoadDoneRef.current = true;
@@ -155,21 +129,17 @@ export default function App() {
     };
   }, [fetchFromServer]);
 
-  // 2. Persist to localStorage and Server whenever beds/history/logs change
+  // 2. Persist to localStorage IMMEDIATELY and Server whenever beds/history/logs change
   useEffect(() => {
-    // Crucial: Skip initial render before server data has been loaded!
-    if (!isInitialLoadDoneRef.current) {
-      return;
-    }
+    // A. LocalStorage cache immediate synchronous write - NEVER LOST
+    saveHospitalDataImmediately(beds, dischargeHistory, syncLogs);
 
-    // A. LocalStorage cache immediate write
-    try {
-      localStorage.setItem(BEDS_STORAGE_KEY, JSON.stringify(beds));
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(dischargeHistory));
-      localStorage.setItem(SYNC_LOGS_STORAGE_KEY, JSON.stringify(syncLogs));
-    } catch (e) {
-      console.warn('Failed to save to localStorage', e);
-    }
+    const nowStr = new Date().toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    setLastSavedTime(nowStr);
 
     // B. Broadcast to other open tabs
     try {
@@ -179,32 +149,39 @@ export default function App() {
         dischargeHistory,
         syncLogs,
       });
-    } catch (e) {
+    } catch {
       // ignore
     }
 
-    // C. Debounced save to Server API
+    // C. Debounced save to Server API (if server is present)
+    if (!isInitialLoadDoneRef.current) {
+      return;
+    }
+
     setSyncStatus('syncing');
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch('/api/data', {
+        const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+        let res = await fetch(`${baseUrl}/api/data`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ beds, dischargeHistory, syncLogs }),
-        });
-        if (res.ok) {
-          const timeStr = new Date().toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          });
-          setLastSavedTime(timeStr);
+        }).catch(() => null);
+
+        if (!res || !res.ok) {
+          res = await fetch('/api/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ beds, dischargeHistory, syncLogs }),
+          }).catch(() => null);
+        }
+
+        if (res && res.ok) {
           setSyncStatus('synced');
         } else {
-          setSyncStatus('error');
+          setSyncStatus('local');
         }
-      } catch (e) {
-        console.warn('Failed to sync to server, data remains in localStorage:', e);
+      } catch {
         setSyncStatus('local');
       }
     }, 400);
@@ -221,6 +198,7 @@ export default function App() {
   const [isVisualMapOpen, setIsVisualMapOpen] = useState(false);
   const [isGoogleSheetsOpen, setIsGoogleSheetsOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [isBackupRestoreOpen, setIsBackupRestoreOpen] = useState(false);
   const [visualMapZone, setVisualMapZone] = useState<'ALL' | 'KHU NỘI NHI' | 'KHU LÂY'>('ALL');
 
   const handleRecordSyncLog = (log: SyncPayloadLog) => {
@@ -411,19 +389,33 @@ export default function App() {
     if (window.confirm('Bạn có chắc chắn muốn khôi phục lại dữ liệu ban đầu theo file danh sách 93 giường bệnh?')) {
       setBeds(INITIAL_BEDS);
       setDischargeHistory(INITIAL_DISCHARGE_HISTORY);
+      setSyncLogs([]);
+      saveHospitalDataImmediately(INITIAL_BEDS, INITIAL_DISCHARGE_HISTORY, []);
       try {
-        localStorage.removeItem(BEDS_STORAGE_KEY);
-        localStorage.removeItem(HISTORY_STORAGE_KEY);
-        localStorage.removeItem(SYNC_LOGS_STORAGE_KEY);
-        await fetch('/api/reset', { method: 'POST' });
+        const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+        await fetch(`${baseUrl}/api/reset`, { method: 'POST' }).catch(() => null);
+        await fetch('/api/reset', { method: 'POST' }).catch(() => null);
         setSyncStatus('synced');
         setLastSavedTime(
           new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         );
-      } catch (e) {
-        console.warn('Reset server failed, reset locally', e);
+      } catch {
+        setSyncStatus('local');
       }
     }
+  };
+
+  // Restore data from backup JSON file
+  const handleRestoreData = (
+    restoredBeds: Bed[],
+    restoredHistory: DischargeRecord[],
+    restoredLogs: SyncPayloadLog[]
+  ) => {
+    setBeds(restoredBeds);
+    setDischargeHistory(restoredHistory);
+    setSyncLogs(restoredLogs);
+    saveHospitalDataImmediately(restoredBeds, restoredHistory, restoredLogs);
+    handleForceSyncToServer();
   };
 
   // Force sync immediately to server
@@ -493,6 +485,7 @@ export default function App() {
         onOpenVisualMap={() => handleOpenVisualMapModal('ALL')}
         onOpenGoogleSheets={() => setIsGoogleSheetsOpen(true)}
         onOpenDownloadModal={() => setIsDownloadModalOpen(true)}
+        onOpenBackupRestore={() => setIsBackupRestoreOpen(true)}
         onResetData={handleResetData}
         syncStatus={syncStatus}
         lastSavedTime={lastSavedTime}
@@ -625,6 +618,22 @@ export default function App() {
           onClose={() => setIsDownloadModalOpen(false)}
           beds={beds}
           dischargeHistory={dischargeHistory}
+        />
+      )}
+
+      {/* Backup & Restore Data Modal */}
+      {isBackupRestoreOpen && (
+        <BackupRestoreModal
+          isOpen={isBackupRestoreOpen}
+          onClose={() => setIsBackupRestoreOpen(false)}
+          beds={beds}
+          dischargeHistory={dischargeHistory}
+          syncLogs={syncLogs}
+          onRestoreData={handleRestoreData}
+          syncStatus={syncStatus}
+          lastSavedTime={lastSavedTime}
+          onRefreshFromServer={fetchFromServer}
+          onForceSyncToServer={handleForceSyncToServer}
         />
       )}
     </div>

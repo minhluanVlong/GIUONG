@@ -87,15 +87,16 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
-  // --- API Routes ---
+  // Setup API router
+  const apiRouter = express.Router();
 
   // Health check
-  app.get('/api/health', (req, res) => {
+  apiRouter.get('/health', (req, res) => {
     res.json({ status: 'ok', bedsCount: db.beds.length, lastUpdated: db.lastUpdated });
   });
 
   // GET all hospital data (beds, dischargeHistory, syncLogs)
-  app.get('/api/data', (req, res) => {
+  apiRouter.get('/data', (req, res) => {
     res.json({
       success: true,
       beds: db.beds,
@@ -106,7 +107,7 @@ async function startServer() {
   });
 
   // POST save all hospital data
-  app.post('/api/data', (req, res) => {
+  apiRouter.post('/data', (req, res) => {
     const { beds, dischargeHistory, syncLogs } = req.body;
 
     if (Array.isArray(beds) && beds.length > 0) {
@@ -128,7 +129,7 @@ async function startServer() {
   });
 
   // POST save beds specifically
-  app.post('/api/beds', (req, res) => {
+  apiRouter.post('/beds', (req, res) => {
     const { beds } = req.body;
     if (!Array.isArray(beds) || beds.length === 0) {
       return res.status(400).json({ success: false, message: 'Invalid beds array' });
@@ -143,7 +144,7 @@ async function startServer() {
   });
 
   // POST save single bed update
-  app.post('/api/beds/:bedId', (req, res) => {
+  apiRouter.post('/beds/:bedId', (req, res) => {
     const bedId = req.params.bedId.toUpperCase();
     const updatedBed = req.body;
 
@@ -162,7 +163,7 @@ async function startServer() {
   });
 
   // POST save discharge history
-  app.post('/api/history', (req, res) => {
+  apiRouter.post('/history', (req, res) => {
     const { dischargeHistory } = req.body;
     if (!Array.isArray(dischargeHistory)) {
       return res.status(400).json({ success: false, message: 'Invalid history array' });
@@ -177,7 +178,7 @@ async function startServer() {
   });
 
   // POST reset database back to initial hospital dataset
-  app.post('/api/reset', (req, res) => {
+  apiRouter.post('/reset', (req, res) => {
     db = {
       beds: INITIAL_BEDS,
       dischargeHistory: INITIAL_DISCHARGE_HISTORY,
@@ -191,6 +192,18 @@ async function startServer() {
       bedsCount: db.beds.length,
       lastUpdated: db.lastUpdated,
     });
+  });
+
+  // Mount API router to both /api and /GIUONG/api
+  app.use('/api', apiRouter);
+  app.use('/GIUONG/api', apiRouter);
+
+  // Redirect root / to /GIUONG/ for browser requests
+  app.get('/', (req, res, next) => {
+    if (req.headers.accept?.includes('text/html')) {
+      return res.redirect(302, '/GIUONG/');
+    }
+    next();
   });
 
   // Vite middleware for development vs static build for production

@@ -12,6 +12,7 @@ import {
   Download,
   CloudCheck,
   RefreshCw,
+  Database,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -21,6 +22,7 @@ interface HeaderProps {
   onOpenVisualMap: () => void;
   onOpenGoogleSheets?: () => void;
   onOpenDownloadModal?: () => void;
+  onOpenBackupRestore?: () => void;
   onResetData: () => void;
   syncStatus?: 'synced' | 'syncing' | 'local' | 'error';
   lastSavedTime?: string;
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenVisualMap,
   onOpenGoogleSheets,
   onOpenDownloadModal,
+  onOpenBackupRestore,
   onResetData,
   syncStatus = 'synced',
   lastSavedTime,
@@ -93,6 +96,17 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Google Sheets (2 Sheet)</span>
+              </button>
+            )}
+
+            {onOpenBackupRestore && (
+              <button
+                onClick={onOpenBackupRestore}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 transition-colors shadow-2xs"
+                title="Sao lưu hoặc khôi phục dữ liệu 93 giường bệnh (file .JSON)"
+              >
+                <Database className="w-3.5 h-3.5 text-blue-600" />
+                <span>Sao Lưu & Phục Hồi</span>
               </button>
             )}
 
